@@ -5,21 +5,25 @@ import base64               #Used for password
 
 class User:
     def __init__(self):
-        self.username = ''
-        self.password = ''
         self.done = False
-        self.notes = [{                     #Dict stores username password notes and done or not
-            'username': self.username,
-            'password': self.password,
-            'notes': [
-                {'Content':'' , 'Done': 'False'}
-            ]
-        }]
+        self.name = {                     #Dict stores username password notes and done or not
+            'username': '',
+            'password': '',
+            'notes': []
+        }
+        self.users=[]               #list to store self.notes values
 
-    def new_user(self):
+    def new_user(self):             #Func to add new user
         print("New User \n")
-        self.username = input("Enter your username: ")
-        self.password = input("Enter your password: ")
+        self.name['username'] =input("Enter your username: ")
+        self.name['password'] =input("Create your password: ")
+        self.users.append(self.name)
+
+
+user=User()
+user.new_user()
+
+
 
 
 
