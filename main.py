@@ -222,8 +222,18 @@ class NotesApp:  # Main Notes App class
                 print()
                 return
 
+class RunApp:
+    def run(self):
+        app=NotesApp()
+        while True:
+            app.user_menu()
+            if app.Exit:
+                return
+            app.notes_menu()
+        
+
+            
 
 
-app = NotesApp()
-app.user_menu()
-app.notes_menu()
+run=RunApp()
+run.run()
