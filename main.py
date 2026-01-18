@@ -18,11 +18,15 @@ class User:
         print("New User \n")
         self.name['username'] =input("Enter your username: ")
         self.name['password'] =getpass("Create your password: ")
+        print()
         for user in self.users:                    #Checks if user already exists
             if self.name==user:                      
                 print("User already exists")
+                print()
                 self.done=True
-                return 
+                return
+        print("User created successfully")
+        print() 
         self.users.append(self.name)    #appends new user to users list
         return self.users
     
@@ -30,11 +34,15 @@ class User:
         print("Existing User \n")
         username =input("Enter your username: ")
         password =getpass("Enter your password: ")
-        for user in self.users:
+        print()
+        for i,user in enumerate(self.users):        #Checks if username and password match
             if user['username']==username and user['password']==password:
                 print("Login Successful")
+                print()
+                self.name=self.users[i]        #Sets self.name to logged in user
                 return user
         print('Invalid username or password')
+        print()
     
     def add_notes(self):          #Func to add notes for user
         self.notes['content']=input("Enter your note: ")
@@ -43,7 +51,7 @@ class User:
         return self.name['notes']                      
 
     def view_notes(self):       #Func to view notes
-        for i,note in enumerate(self.users['notes']):
+        for i,note in enumerate(self.name['notes']):            #Displays notes with done status    
             print(f'{i+1}. {note['content']}    {'✅' if note['done'] else ''}')
                     
     def mark_done(self):          #Func to mark notes as done
@@ -54,18 +62,46 @@ class User:
             except ValueError:
                         print("Invalid input. Please enter a number.")
                         continue
-            if n<1 or n>len(self.users['notes']):
-                 print('Please select a valid number')
+            if n<1 or n>len(self.name['notes']):
+                 print('Please select a valid number from the list.')
                  continue
             else:
-                break
-        for i,note in enumerate(self.users['notes']):
-          if i==n-1:
-            note['done']=True
-            print("Note marked as done")
-            break   
-            
-                 
+                break               
+        for i,note in enumerate(self.name['notes']):   #Marks selected note as done`                                 
+             if n-1==i:
+                  if note['done'] ==True:
+                       print("Note is already marked as done")
+                       print()
+                  else:
+                    note['done']=True
+                    print("Note marked as done")
+                    print()
+        return self.name['notes']
+    
+    def mark_undone(self):        #Func to mark notes as not done
+         self.view_notes()
+         while True:                #Loop until valid input
+            try:                 #Input validation for note selection
+                        n=int(input('select note to mark as udone:'))
+            except ValueError:
+                        print("Invalid input. Please enter a number.")
+                        continue
+            if n<1 or n>len(self.name['notes']):
+                 print('Please select a valid number from the list.')
+                 continue
+            else:
+                break      
+         for i,note in enumerate(self.name['notes']):   #Marks selected note as not done
+                if n-1==i:
+                    if note['done'] ==False:
+                        print("Note is already marked as undone")
+                        print()
+                    else:
+                        note['done']=False
+                        print("Note marked as undone")
+                        print()
+         return self.name['notes']
+
 
 
         
@@ -76,7 +112,14 @@ class User:
 
 user=User()
 user.new_user()
-print(user.users)
+user.existing_user()
+user.add_notes()
+user.mark_done()
+user.view_notes()
+user.mark_undone()
+user.view_notes()
+
+
 
 
 
