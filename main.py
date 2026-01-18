@@ -6,6 +6,7 @@ from getpass import getpass               #Used for password
 class User:
     def __init__(self):
         self.done = False
+        self.notes = {'content': '', 'done': False}   #Dict to store notes content and done status
         self.name = {                     #Dict stores username password and notes
             'username': '',
             'password': '',
@@ -34,6 +35,38 @@ class User:
                 print("Login Successful")
                 return user
         print('Invalid username or password')
+    
+    def add_notes(self):          #Func to add notes for user
+        self.notes['content']=input("Enter your note: ")
+        self.name['notes'].append(self.notes)       #Appends notes to user's notes list
+        print("Note added successfully")
+        return self.name['notes']                      
+
+    def view_notes(self):       #Func to view notes
+        for i,note in enumerate(self.users['notes']):
+            print(f'{i+1}. {note['content']}    {'✅' if note['done'] else ''}')
+                    
+    def mark_done(self):          #Func to mark notes as done
+        self.view_notes()   
+        while True:                #Loop until valid input
+            try:                 #Input validation for note selection
+                        n=int(input('select note to mark as done:'))
+            except ValueError:
+                        print("Invalid input. Please enter a number.")
+                        continue
+            if n<1 or n>len(self.users['notes']):
+                 print('Please select a valid number')
+                 continue
+            else:
+                break
+        for i,note in enumerate(self.users['notes']):
+          if i==n-1:
+            note['done']=True
+            print("Note marked as done")
+            break   
+            
+                 
+
 
         
          
