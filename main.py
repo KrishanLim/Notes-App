@@ -66,17 +66,23 @@ class User:
         return
 
     def delete_notes(self):  # Func to delete notes
+        cancel=False
         self.view_notes()
         while True:     # Loop until valid input
             try:      # Input validation for note selection
-                n = int(input('select note to delete:'))
+                n = int(input('select note to delete (0 to cancel):'))
                 print()
             except ValueError:
                 print("Invalid input. Please enter a number.")
                 continue
-            if n < 1 or n > len(self.name['notes']):
+            if n < 0 or n > len(self.name['notes']):
                 print('Please select a valid number from the list.')
                 continue
+            elif n == 0:        # Cancels delete operation
+                cancel=True
+                print("Delete cancelled")
+                print()
+                return
             else:
                 break
         for i, note in enumerate(self.name['notes']):  # Deletes selected note
@@ -161,15 +167,20 @@ class NotesApp:  # Main Notes App class
                 continue
             elif choice == 1:
                 self.user.new_user()
-                if not self.user.available:
+                if self.user.available:
+                    break
+                else:
                     continue
             elif choice == 2:
                 self.user.existing_user()
                 if not self.user.available:
                     continue
+                else:
+                    break
             elif choice == 3:
                 print('Exiting Notes App')
                 break
+        return
 
     def notes_menu(self):  # Func to display notes menu
         while True:  # Loop until user exits
@@ -193,8 +204,15 @@ class NotesApp:  # Main Notes App class
                     continue
             elif choice == 2:
                 self.user.view_notes()
+                inp=getpass('Press Enter to continue...')
+                continue
+            elif choice == 3:
+                self.user.delete_notes()
+                continue
+
             
 
 
 app = NotesApp()
 app.user_menu()
+app .notes_menu()
