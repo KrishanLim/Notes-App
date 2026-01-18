@@ -54,11 +54,11 @@ class User:
     def add_notes(self):  # Func to add notes for user
         content = input('Enter note: \n').strip()
         self.notes = {'content': content, 'done': False}  # Sets note content and done status
-        if content in self.name['notes']['content']:  # Checks if note already exists
-            print('Note already exists')
-            print()
-            self.available=False
-            return
+        for note in self.name['notes']:          # Checks if note already exists
+            if content == note['content']:
+                print('Note already exists')
+                self.available=False
+                return
         self.available=True
         self.name['notes'].append(self.notes)   # Appends note to user's notes list
         print('Note added successfully')
@@ -149,6 +149,7 @@ class User:
 
 class NotesApp:  # Main Notes App class
     def __init__(self):  # Initializes User class
+        self.Exit=False
         self.user = User()
 
     def user_menu(self):  # Func to display user menu
@@ -179,6 +180,7 @@ class NotesApp:  # Main Notes App class
                     break
             elif choice == 3:
                 print('Exiting Notes App')
+                self.Exit=True
                 break
         return
 
@@ -206,13 +208,22 @@ class NotesApp:  # Main Notes App class
                 self.user.view_notes()
                 inp=getpass('Press Enter to continue...')
                 continue
-            elif choice == 3:
+            elif choice == 3:               
                 self.user.delete_notes()
                 continue
+            elif choice == 4:
+                self.user.mark_done()
+                continue
+            elif choice == 5:
+                self.user.mark_undone()
+                continue
+            elif choice == 6:
+                print('Logging out...')
+                print()
+                return
 
-            
 
 
 app = NotesApp()
 app.user_menu()
-app .notes_menu()
+app.notes_menu()
