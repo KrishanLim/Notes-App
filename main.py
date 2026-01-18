@@ -52,10 +52,15 @@ class User:
 
     
     def add_notes(self):          #Func to add notes for user
-        self.notes['content']=input("Enter your note: ").strip()   #Takes note input
-        self.name['notes'].append(self.notes)       #Appends notes to user's notes list
-        print("Note added successfully")
-        return self.name['notes']                      
+        content=input('Enter note: \n').strip()
+        self.notes={'content':content,'done':False}   #Sets note content and done status
+        for user in self.users:
+             if self.name['username']==user['username'] and self.name['password']==user['password']:
+                  user['notes'].append(self.notes)   #Appends note to user's notes list
+        print('Note added successfully')
+        print()
+        return
+                              
 
     def view_notes(self):       #Func to view notes
         for i,note in enumerate(self.name['notes']):            #Displays notes with done status    
@@ -139,6 +144,27 @@ class NotesApp:         #Main Notes App class
                 print('Exiting Notes App')
                 break
              
+    def notes_menu(self):        #Func to display notes menu
+        while True:              #Loop until user exits
+             print('1. Add Note')
+             print('2. View Notes')
+             print('3. Mark Note as Done')
+             print('4. Mark Note as Undone')
+             print('5. Logout')
+             try:
+                  choice=int(input('Select an option: '))
+             except ValueError:
+                print("Invalid input. Please enter a number.")
+                continue
+             if choice<1 or choice>5:
+                print('Please select a valid option.')
+                continue
+             elif choice==1:
+                self.user.add_notes()
+             elif choice==2:
+                  self.user.mark_done()
+
+          
              
 
         
