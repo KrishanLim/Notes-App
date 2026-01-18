@@ -5,7 +5,7 @@ from getpass import getpass               #Used for password
 
 class User:
     def __init__(self):
-        self.done = False
+        self.available = False
         self.notes = {'content': '', 'done': False}   #Dict to store notes content and done status
         self.name = {                     #Dict stores username password and notes
             'username': '',
@@ -16,36 +16,43 @@ class User:
 
     def new_user(self):             #Func to add new user
         print("New User \n")
-        self.name['username'] =input("Enter your username: ")
-        self.name['password'] =getpass("Create your password: ")
+        name =input("Enter your username: ").strip()
+        password =getpass("Create your password: ").strip()
         print()
         for user in self.users:                    #Checks if user already exists
-            if self.name==user:                      
+            if name == user['username'] and password == user['password']:                      
                 print("User already exists")
                 print()
-                self.done=True
-                return
+                self.available = False
+                return 
+        self.name={'username':name,'password':password,'notes':[]}   #Sets self.name to new user details
         print("User created successfully")
+        self.available = True  
         print() 
         self.users.append(self.name)    #appends new user to users list
-        return self.users
+        print(self.users)
+        return 
     
     def existing_user(self):              #Func for existing user login
         print("Existing User \n")
-        username =input("Enter your username: ")
-        password =getpass("Enter your password: ")
+        username =input("Enter your username: ").strip()
+        password =getpass("Enter your password: ").strip()    
         print()
         for i,user in enumerate(self.users):        #Checks if username and password match
             if user['username']==username and user['password']==password:
                 print("Login Successful")
                 print()
                 self.name=self.users[i]        #Sets self.name to logged in user
+                self.available = True
                 return user
         print('Invalid username or password')
         print()
+        self.available = False
+        return 
+
     
     def add_notes(self):          #Func to add notes for user
-        self.notes['content']=input("Enter your note: ")
+        self.notes['content']=input("Enter your note: ").strip()   #Takes note input
         self.name['notes'].append(self.notes)       #Appends notes to user's notes list
         print("Note added successfully")
         return self.name['notes']                      
@@ -102,7 +109,37 @@ class User:
                         print()
          return self.name['notes']
 
+class NotesApp:         #Main Notes App class
+    def __init__(self):     #Initializes User class
+        self.user=User()
 
+    def user_menu(self):         #Func to display user menu
+        print('Welcome to Notes App')
+        while True:              #Loop until user exits
+             print('1. New User')
+             print('2. Existing User')
+             print('3. Exit')
+             try:
+                    choice=int(input('Select an option: '))
+             except ValueError:
+                    print("Invalid input. Please enter a number.")
+                    continue
+             if choice<1 or choice>3:
+                print('Please select a valid option.')
+                continue
+             elif choice==1:
+                self.user.new_user()
+                if not self.user.available:
+                    continue
+             elif choice==2:
+                self.user.existing_user()
+                if not self.user.available:
+                    continue
+             elif choice==3:
+                print('Exiting Notes App')
+                break
+             
+             
 
         
          
@@ -110,14 +147,8 @@ class User:
     
 
 
-user=User()
-user.new_user()
-user.existing_user()
-user.add_notes()
-user.mark_done()
-user.view_notes()
-user.mark_undone()
-user.view_notes()
+app=NotesApp()
+app.user_menu()
 
 
 
