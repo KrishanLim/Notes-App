@@ -18,7 +18,7 @@ class User:
         self.name['username'] =input("Enter your username: ")
         self.name['password'] =getpass("Create your password: ")
         for user in self.users:                    #Checks if user already exists
-            if self.name==user:
+            if self.name==user:                      
                 print("User already exists")
                 self.done=True
                 return 
@@ -29,6 +29,15 @@ class User:
         print("Existing User \n")
         username =input("Enter your username: ")
         password =getpass("Enter your password: ")
+        for user in self.users:
+            if user['username']==username and user['password']==password:
+                print("Login Successful")
+                return user
+        print('Invalid username or password')
+
+        
+         
+        
     
 
 
