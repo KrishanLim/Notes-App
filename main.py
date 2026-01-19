@@ -1,11 +1,15 @@
 """
 Notes App where User can login and store their notes and mark them as done or not done
 """
+
+import json
 from getpass import getpass  # Used for password
+import os  
 
 
 class User:
-    def __init__(self):
+    def __init__(self, file='data.json'):  # Initializes variables
+        self.file=file
         self.available = False
         self.notes = {'content': '', 'done': False }  # Dict to store notes content and done status
         self.name = {  # Dict stores username password and notes
@@ -13,20 +17,26 @@ class User:
             'password': '',
             'notes': []
         }
-        self.users = []  # list to store self.notes values
+        self.users=[]
 
     def new_user(self):  # Func to add new user
         print("New User \n")
         name = input("Enter your username: ").strip()
         password = getpass("Create your password: ").strip()
         print()
-        for user in self.users:  # Checks if user already exists
-            if name == user['username'] and password == user['password']:
-                print("User already exists")
-                print()
-                self.available = False
-                return
+        if os.path.exists(self.file):        # Checks if username already exists    
+            with open(self.file, 'r') as f:                       
+                self.users = json.load(f)
+                for user in self.users:
+                    if name == user['username']:
+                        print('username already exists')
+                        print()
+                        self.available = False
+                        return
         self.name = {'username': name, 'password': password, 'notes': []}  # Sets self.name to new user details
+        self.users.append(self.name)
+        with open(self.file, 'w') as f:
+            json.dump(self.users, f, indent=2)  # Saves new user to data.json
         print("User created successfully")
         self.available = True
         print()
