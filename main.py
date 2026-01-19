@@ -26,7 +26,7 @@ class User:
         print()
         if os.path.exists(self.file):        # Checks if username already exists    
             with open(self.file, 'r') as f:  
-                self.users = json.load(f)                     
+                self.users = [] if os.path.getsize(self.file)==0 else json.load(f)          # Loads empty list if file is empty                   
                 for user in self.users:
                     if name == user['username']:
                         print('username already exists')
@@ -55,6 +55,7 @@ class User:
                 self.name = user
                 self.available = True
                 print()
+                return
         print('Invalid username or password')
         print()
         self.available = False
