@@ -25,8 +25,8 @@ class User:
         password = getpass("Create your password: ").strip()
         print()
         if os.path.exists(self.file):        # Checks if username already exists    
-            with open(self.file, 'r') as f:                       
-                self.users = json.load(f)
+            with open(self.file, 'r') as f:  
+                self.users = json.load(f)                     
                 for user in self.users:
                     if name == user['username']:
                         print('username already exists')
@@ -40,7 +40,6 @@ class User:
         print("User created successfully")
         self.available = True
         print()
-        self.users.append(self.name)  # appends new user to users list
         print(self.users)
         return
 
@@ -48,14 +47,14 @@ class User:
         print("Existing User \n")
         username = input("Enter your username: ").strip()
         password = getpass("Enter your password: ").strip()
-        print()
-        for i, user in enumerate(self.users):  # Checks if username and password match
-            if user['username'] == username and user['password'] == password:
-                print("Login Successful")
-                print()
-                self.name = self.users[i]  # Sets self.name to logged in user
+        with open(self.file, 'r')as f:  # Loads users from data.json
+            self.users = json.load(f)
+        for user in self.users:
+            if username ==user['username'] and password == user['password']:
+                print('login successful')
+                self.name = user
                 self.available = True
-                return user
+                print()
         print('Invalid username or password')
         print()
         self.available = False
