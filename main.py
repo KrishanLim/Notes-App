@@ -20,7 +20,7 @@ class User:
         self.users=[]
 
     def new_user(self):  # Func to add new user
-        print("New User \n")
+        print("--New User-- \n")
         name = input("Enter your username: ").strip()
         password = getpass("Create your password: ").strip()
         print()
@@ -44,9 +44,10 @@ class User:
         return
 
     def existing_user(self):  # Func for existing user login
-        print("Existing User \n")
+        print("--Existing User-- \n")
         username = input("Enter your username: ").strip()
         password = getpass("Enter your password: ").strip()
+        print()
         with open(self.file, 'r')as f:  # Loads users from data.json
             self.users = json.load(f)
         for user in self.users:
@@ -62,7 +63,9 @@ class User:
         return
 
     def add_notes(self):  # Func to add notes for user
+        print("--Add Note-- \n")
         content = input('Enter note: \n').strip()
+        print()
         self.notes = {'content': content, 'done': False}  # Sets note content and done status
         for note in self.name['notes']:          # Checks if note already exists
             if content == note['content']:
@@ -76,8 +79,10 @@ class User:
         return
 
     def delete_notes(self):  # Func to delete notes
+        print("--Delete Note-- \n")
         cancel=False
         self.view_notes()
+        print()
         while True:     # Loop until valid input
             try:      # Input validation for note selection
                 n = int(input('select note to delete (0 to cancel):'))
@@ -108,7 +113,9 @@ class User:
 
 
     def mark_done(self):  # Func to mark notes as done
+        print("--Mark Note as Done-- \n")
         self.view_notes()
+        print()
         while True:  # Loop until valid input
             try:  # Input validation for note selection
                 n = int(input('select note to mark as done:'))
@@ -120,10 +127,11 @@ class User:
                 continue
             else:
                 break
+        print()
         for i, note in enumerate(self.name['notes']):  # Marks selected note as done`
             if n - 1 == i:
                 if note['done'] == True:
-                    print("Note is already marked as done")
+                    print("Note is already marked as Done")
                     print()
                 else:
                     note['done'] = True
@@ -133,10 +141,13 @@ class User:
 
 
     def mark_undone(self):  # Func to mark notes as not done
+        print("--Unmark Note as Done-- \n")
         self.view_notes()
+        print()
         while True:  # Loop until valid input
             try:  # Input validation for note selection
                 n = int(input('select note to mark as udone:'))
+                print()
             except ValueError:
                 print("Invalid input. Please enter a number.")
                 continue
@@ -163,13 +174,19 @@ class NotesApp:  # Main Notes App class
         self.user = User()
 
     def user_menu(self):  # Func to display user menu
+        print()
+        print('*'*30)
         print('Welcome to Notes App')
+        print('*'*30)
+        print()
         while True:  # Loop until user exits
             print('1. New User')
             print('2. Existing User')
             print('3. Exit')
+            print()
             try:
                 choice = int(input('Select an option: '))
+                print()
             except ValueError:
                 print("Invalid input. Please enter a number.")
                 continue
@@ -202,8 +219,10 @@ class NotesApp:  # Main Notes App class
             print('4. Mark Note as Done')
             print('5. Mark Note as Undone')
             print('6. Logout')
+            print()
             try:
                 choice = int(input('Select an option: '))
+                print()
             except ValueError:
                 print("Invalid input. Please enter a number.")
                 continue
@@ -215,8 +234,11 @@ class NotesApp:  # Main Notes App class
                 if not self.user.available:
                     continue
             elif choice == 2:
+                print("--View Notes-- \n")
                 self.user.view_notes()
+                print()
                 inp=getpass('Press Enter to continue...')
+                print()
                 continue
             elif choice == 3:               
                 self.user.delete_notes()
