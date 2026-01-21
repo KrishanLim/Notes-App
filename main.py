@@ -7,6 +7,7 @@ from getpass import getpass  # Used for password
 import os  
 
 
+
 class User:
     def __init__(self, file='data.json'):  # Initializes variables
         self.file=file
@@ -17,22 +18,24 @@ class User:
             'password': '',
             'notes': []
         }
-        self.users=[]
+        if os.path.exists(self.file):       # Loads users from data.json if it exists
+            with open(self.file,'r') as f:
+                if os.path.getsize(self.file)==0:
+                    self.users=[]
+                else:
+                    self.users = json.load(f)
 
     def new_user(self):  # Func to add new user
         print("--New User-- \n")
         name = input("Enter your username: ").strip()
         password = getpass("Create your password: ").strip()
-        print()
-        if os.path.exists(self.file):        # Checks if username already exists    
-            with open(self.file, 'r') as f:  
-                self.users = [] if os.path.getsize(self.file)==0 else json.load(f)          # Loads empty list if file is empty                   
-                for user in self.users:
-                    if name == user['username']:
-                        print('username already exists')
-                        print()
-                        self.available = False
-                        return
+        print()                 
+        for user in self.users:
+            if name == user['username']:
+                print('username already exists')
+                print()
+                self.available = False
+                return
         self.name = {'username': name, 'password': password, 'notes': []}  # Sets self.name to new user details
         self.users.append(self.name)
         with open(self.file, 'w') as f:
@@ -48,8 +51,6 @@ class User:
         username = input("Enter your username: ").strip()
         password = getpass("Enter your password: ").strip()
         print()
-        with open(self.file, 'r')as f:  # Loads users from data.json
-            self.users = json.load(f)
         for user in self.users:
             if username ==user['username'] and password == user['password']:
                 print('login successful')
@@ -62,6 +63,41 @@ class User:
         self.available = False
         return
 
+    def view_users(self):
+        if len(self.users)==0:
+            print('No users available')
+            return 0
+        for i,user in enumerate(self.users):
+            print(f'{i+1}. {user['username']}')
+        return
+        
+
+    def delete_user(self):
+        print('--Delete User-- \n')
+        if self.view_users()==0:
+            self.view_users()
+            return
+        while True:  # Loop until valid input
+            try:
+                n= int(input('Select user to delete (0 to cancel): '))
+                print()
+            except ValueError:
+                print("Invalid input. Please enter a number.")
+                continue
+            if n <0 or n > len(self.users):
+                print('Please select a valid number from the list.')
+                continue
+            elif n==0:
+                print('--Delete cancelled-- \n')
+                return
+            elif n in range(1, len(self.users)+1):
+                for i,user in enumerate(self.users):
+                    if n-1==i:
+                        self.users.pop(i)
+                        with open(self.file, 'w') as f:
+                            json.dump(self.users, f, indent=2)
+                            return
+        
     def add_notes(self):  # Func to add notes for user
         print("--Add Note-- \n")
         content = input('Enter note: \n').strip()
