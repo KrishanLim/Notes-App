@@ -5,6 +5,7 @@ Notes App where User can login and store their notes and mark them as done or no
 import json
 from getpass import getpass  # Used for password
 import os  
+import sqlite3
 
 
 
