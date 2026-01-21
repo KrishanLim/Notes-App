@@ -7,6 +7,16 @@ from getpass import getpass  # Used for password
 import os  
 import sqlite3
 
+class Database:
+    def __init__(self, database='data.db'):
+        self.database = database
+        self.con = sqlite3.connect(self.database)
+        self.cur= self.con.cursor()
+        self.cur.execute("CREATE TABLE IF NOT EXISTS User(Name, Password, Notes)")
+
+        
+
+
 
 
 class User:
