@@ -11,22 +11,52 @@ import sqlite3
 class Database:  # Creates Database To store values
     def __init__(self, database="data.db"):
         self.database = database
-        self.con = sqlite3.connect(self.database)
-        self.cur = self.con.cursor()
+        self.con = sqlite3.connect(self.database)  # SQL Connect
+        self.cur = self.con.cursor()  # Cursor
         self.cur.execute(
             """CREATE TABLE IF NOT EXISTS login_info(id INTEGER PRIMARY KEY, username, password)"""
-        )  # Creates Database if it does not exist
-        self.cur.execute("CREATE TABLE IF NOT EXISTS Notes(id INTEGER PRIMARY KEY, user_id, Content , Done)")
+        )  # Creates Table for user info If it does not exist
+        self.cur.execute(
+            "CREATE TABLE IF NOT EXISTS Notes(id INTEGER PRIMARY KEY, user_id, Content , Done)"
+        )  # Creates Table for User Notes
 
-    def add_user(self, data):           #Function to add new users
-        self.cur.execute('SELECT EXISTS(SELECT 1 FROM login_info WHERE username=?)',(data['username']))
+    def add_user(self, data):  # Function to add new users
+        self.cur.execute(  # Checks if username already exists
+            "SELECT EXISTS(SELECT 1 FROM login_info WHERE username=?)",
+            (data["username"]),
+        )
         if self.cur.fetchone[0]:
-            print('User already exists')
+            print("User already exists")
         else:
-            self.cur.execute("INSERT INTO login_info(username, password) VALUES=(?,?)",(data['username'],data['password']))
+            self.cur.execute(  # Adds Username and password to database
+                "INSERT INTO login_info(username, password) VALUES=(?,?)",
+                (data["username"], data["password"]),
+            )
             self.con.commit()
         return
-    
+
+    def add_notes(self, data, note):  # Func to add notes to database
+        self.cur.execute(  # Checks the id of User to which note is to be added
+            "FROM login info SELECT id WHERE username=?", (data["username"],)
+        )
+        id = self.cur.fetchone()[0]  # Id of the user
+        self.cur.execute(  # Checks if note already exists
+            "SELECT EXISTS(SELECT 1 FROM Notes if Content=?)", (note["content"])
+        )
+        if self.cur.fetchone()[0]:  
+            self.cur.execute(       #Adds user id, Content and Done status to the table
+                "INSERT INTO Notes(user_id, Content, Done) WHERE VALUES (?,?,?)",
+                (
+                    id,
+                    note["content"],
+                    note["done"],
+                ),
+            )
+            self.con.commit()   #Commits
+        else:       
+            print('Note already exists')    #Note already Exists
+        return
+
 class User:
     def __init__(self, file="data.json"):  # Initializes variables
         self.file = file
