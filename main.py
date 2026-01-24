@@ -43,8 +43,8 @@ class Database:  # Creates Database To store values
         self.cur.execute(  # Checks if note already exists
             "SELECT EXISTS(SELECT 1 FROM Notes if Content=?)", (note["content"])
         )
-        if self.cur.fetchone()[0]:  
-            self.cur.execute(       #Adds user id, Content and Done status to the table
+        if self.cur.fetchone()[0]:
+            self.cur.execute(  # Adds user id, Content and Done status to the table
                 "INSERT INTO Notes(user_id, Content, Done) WHERE VALUES (?,?,?)",
                 (
                     id,
@@ -52,21 +52,46 @@ class Database:  # Creates Database To store values
                     note["done"],
                 ),
             )
-            self.con.commit()   #Commits
-        else:       
-            print('Note already exists')    #Note already Exists
+            self.con.commit()  # Commits
+        else:
+            print("Note already exists")  # Note already Exists
         return
-    
+
     def delete_user(self, data):
-        self.cur.execute('DELETE FROM login_info where username=?', data['username'],)
+        self.cur.execute(
+            "DELETE FROM login_info where username=?",
+            data["username"],
+        )
         self.con.commit()
         return
-    
+
     def delete_note(self, data):
-        self.cur.execute("DELETE FROM Notes where Content=?",data['content'],)
+        self.cur.execute(
+            "DELETE FROM Notes where Content=?",
+            data["content"],
+        )
         self.con.commit()
         return
-    
+
+    def update_done(self, data, done):
+        self.cur.execute(
+            "SELECT EXISTS(SELECT 1 FROM Notes WHERE Done=?)",
+            done,
+        )
+        if self.cur.fetchone()[0]:
+            print(" Thhe note is already Marked ", "Done" if done else "Not Done")
+        else:
+            self.cur.execute(
+                "UPDATE Notes SET Done=? WHERE Content=?",
+                (
+                    done,
+                    data["content"],
+                ),
+            )
+            self.con.commit()
+        return
+
+
 class User:
     def __init__(self, file="data.json"):  # Initializes variables
         self.file = file
