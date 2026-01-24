@@ -57,31 +57,35 @@ class Database:  # Creates Database To store values
             print("Note already exists")  # Note already Exists
         return
 
-    def delete_user(self, data):
+    def delete_user(
+        self, data
+    ):  # Func to delete User from Table login_info from database
         self.cur.execute(
-            "DELETE FROM login_info where username=?",
+            "DELETE FROM login_info where username=?",  # Deletes User
             data["username"],
         )
         self.con.commit()
         return
 
-    def delete_note(self, data):
+    def delete_note(
+        self, data
+    ):  # Func to delete Content From Table Notes from database
         self.cur.execute(
-            "DELETE FROM Notes where Content=?",
+            "DELETE FROM Notes where Content=?",  # Deletes Notes
             data["content"],
         )
         self.con.commit()
         return
 
-    def update_done(self, data, done):
+    def update_done(self, data, done):  # Func to update done status from Table Notes
         self.cur.execute(
             "SELECT EXISTS(SELECT 1 FROM Notes WHERE Done=?)",
             done,
         )
-        if self.cur.fetchone()[0]:
+        if self.cur.fetchone()[0]:  # Checks if the Done status is same
             print(" Thhe note is already Marked ", "Done" if done else "Not Done")
         else:
-            self.cur.execute(
+            self.cur.execute(  # Updated Done Status
                 "UPDATE Notes SET Done=? WHERE Content=?",
                 (
                     done,
@@ -93,8 +97,8 @@ class Database:  # Creates Database To store values
 
 
 class User:
-    def __init__(self, file="data.json"):  # Initializes variables
-        self.file = file
+    def __init__(self):  # Initializes variables
+        self.db = Database()  # Connects to Database Class
         self.available = False
         self.notes = {
             "content": "",
@@ -103,15 +107,21 @@ class User:
         self.name = {  # Dict stores username password and notes
             "username": "",
             "password": "",
-            "notes": [],
         }
-        self.users = []
-        if os.path.exists(self.file):  # Loads users from data.json if it exists
-            with open(self.file, "r") as f:
-                if os.path.getsize(self.file) == 0:
-                    self.users = []
-                else:
-                    self.users = json.load(f)
+
+    def user_input(self, high):
+        while True:
+            try:
+                ans = int(input("Select an Option \n press 0 to Exit: "))
+            except ValueError:
+                print()
+                print("Enter a Number")
+                print()
+            if ans < 0 and ans > high:
+                print("Enter a valid option")
+            else:
+                break
+        return ans
 
     def new_user(self):  # Func to add new user
         print("--New User-- \n")
