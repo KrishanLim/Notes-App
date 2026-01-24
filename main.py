@@ -61,7 +61,12 @@ class Database:  # Creates Database To store values
         self.cur.execute('DELETE FROM login_info where username=?', data['username'],)
         self.con.commit()
         return
-
+    
+    def delete_note(self, data):
+        self.cur.execute("DELETE FROM Notes where Content=?",data['content'],)
+        self.con.commit()
+        return
+    
 class User:
     def __init__(self, file="data.json"):  # Initializes variables
         self.file = file
