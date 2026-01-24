@@ -56,6 +56,11 @@ class Database:  # Creates Database To store values
         else:       
             print('Note already exists')    #Note already Exists
         return
+    
+    def delete_user(self, data):
+        self.cur.execute('DELETE FROM login_info where username=?', data['username'],)
+        self.con.commit()
+        return
 
 class User:
     def __init__(self, file="data.json"):  # Initializes variables
