@@ -3,8 +3,7 @@ Notes App where User can login and store their notes and mark them as done or no
 """
 
 import json
-from getpass import getpass  # Used for password
-import os
+import bcrypt
 import sqlite3
 
 
@@ -27,13 +26,36 @@ class Database:  # Creates Database To store values
         )
         if self.cur.fetchone[0]:
             print("User already exists")
+            return True
         else:
             self.cur.execute(  # Adds Username and password to database
                 "INSERT INTO login_info(username, password) VALUES=(?,?)",
                 (data["username"], data["password"]),
             )
             self.con.commit()
+        return False
+
+    def delete_user(self, data):  # Func to delete User from Table login_info from database
+        self.cur.execute(
+            "DELETE FROM login_info where username=?",  # Deletes User
+            data["username"],
+        )
+        self.con.commit()
         return
+
+    def user_exists(self, data):
+        self.cur.execute(  # Checks if username already exists
+            "SELECT EXISTS(SELECT 1 FROM login_info WHERE username=? and)",
+            (data["username"],),
+        )
+        if self.cur.fetchone[0]:
+            self.cur.execute("SELECT password FROM login_info WHERE username = ",(data['username'],))
+            password =self.cur.fetchone()
+            check=bcrypt.checkpw(
+                password.encrypt('utf-8',data['password'].encrypt('utf-8'))
+            )
+            return check
+        return False
 
     def add_notes(self, data, note):  # Func to add notes to database
         self.cur.execute(  # Checks the id of User to which note is to be added
@@ -55,16 +77,6 @@ class Database:  # Creates Database To store values
             self.con.commit()  # Commits
         else:
             print("Note already exists")  # Note already Exists
-        return
-
-    def delete_user(
-        self, data
-    ):  # Func to delete User from Table login_info from database
-        self.cur.execute(
-            "DELETE FROM login_info where username=?",  # Deletes User
-            data["username"],
-        )
-        self.con.commit()
         return
 
     def delete_note(
@@ -119,51 +131,38 @@ class User:
                 print()
             if ans < 0 and ans > high:
                 print("Enter a valid option")
+                print()
             else:
                 break
         return ans
 
     def new_user(self):  # Func to add new user
         print("--New User-- \n")
-        name = input("Enter your username: ").strip()
-        password = getpass("Create your password: ").strip()
+        username = input("Enter your username: ").strip()
+        password = input("Create your password: ").strip()      #User enters password
+        password_bytes = password.encode('utf-8')               #Changes into bytes
+        hashed_password = bcrypt.hashpw(password_bytes, bcrypt.gensalt())       #Hash password using gensalt
+        decoded_password = hashed_password.decode('utf-8')      #Decoded from bytes to string to save in database
         print()
-        for user in self.users:
-            if name == user["username"]:
-                print("username already exists")
-                print()
-                self.available = False
-                return
-        self.name = {
-            "username": name,
-            "password": password,
-            "notes": [],
-        }  # Sets self.name to new user details
-        self.users.append(self.name)
-        with open(self.file, "w") as f:
-            json.dump(self.users, f, indent=2)  # Saves new user to data.json
-        print("User created successfully")
-        self.available = True
-        print()
-        print(self.users)
-        return
+        name = {
+            "username": username,
+            "password": decoded_password,
+        }
+        self.available = self.db.add_user(self.name)  # Returns True if user exists False if Not
+        return self.available
 
     def existing_user(self):  # Func for existing user login
         print("--Existing User-- \n")
         username = input("Enter your username: ").strip()
-        password = getpass("Enter your password: ").strip()
+        password = ("Enter your password: ").strip()
+        name = {
+            "username": username,
+            "password": password,
+        }
         print()
-        for user in self.users:
-            if username == user["username"] and password == user["password"]:
-                print("login successful")
-                self.name = user
-                self.available = True
-                print()
-                return
-        print("Invalid username or password")
+        exists = self.db.user_exists(name)
         print()
-        self.available = False
-        return
+        return exists
 
     def view_users(self):
         if len(self.users) == 0:
