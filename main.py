@@ -2,9 +2,8 @@
 Notes App where User can login and store their notes and mark them as done or not done
 """
 
-import json
-import bcrypt
 import sqlite3
+import bcrypt
 
 
 class Database:  # Creates Database To store values
@@ -23,15 +22,18 @@ class Database:  # Creates Database To store values
     def add_user(self, data):  # Function to add new users
         self.cur.execute(  # Checks if username already exists
             "SELECT EXISTS(SELECT 1 FROM login_info WHERE username=?)",
-            (data["username"]),
+            (data["username"],),
         )
-        if self.cur.fetchone[0]:
+        if self.cur.fetchone()[0]:
             print("User already exists")
             return True
         else:
             self.cur.execute(  # Adds Username and password to database
-                "INSERT INTO login_info(username, password) VALUES=(?,?)",
-                (data["username"], data["password"]),
+                "INSERT INTO login_info (username, password) VALUES (?,?)",
+                (
+                    data["username"],
+                    data["password"],
+                ),
             )
             self.con.commit()
         self.cur.execute(
@@ -48,8 +50,8 @@ class Database:  # Creates Database To store values
             return
         self.cur.execute("SELECT username FROM login_info")
         users = self.cur.fetchall()
-        for i, user in enumerate(users):
-            print(f"{i}. {user}")
+        for i, user in enumerate(users, start=1):
+            print(f"{i}. {user[0]}")
         return count
 
     def delete_user(
@@ -73,16 +75,17 @@ class Database:  # Creates Database To store values
 
     def user_exists(self, data):  # Checks Username/password
         self.cur.execute(  # Checks if username already exists
-            "SELECT EXISTS(SELECT 1 FROM login_info WHERE username=? and)",
+            "SELECT EXISTS(SELECT 1 FROM login_info WHERE username= ? )",
             (data["username"],),
         )
-        if self.cur.fetchone[0]:  # if user exists check password
+        if self.cur.fetchone():  # if user exists check password
             self.cur.execute(
-                "SELECT password FROM login_info WHERE username = ", (data["username"],)
+                "SELECT password FROM login_info WHERE username = ?",
+                (data["username"],),
             )
-            password = self.cur.fetchone()
+            password = self.cur.fetchone()[0]
             check = bcrypt.checkpw(
-                password.encrypt("utf-8"), data["password"].encrypt("utf-8")
+                data["password"].encode("utf-8"), password.encode("utf-8")
             )
             if check:
                 self.cur.execute(
@@ -91,16 +94,18 @@ class Database:  # Creates Database To store values
                 self.id = self.cur.fetchone()[0]
                 print("Welcome ", data["username"])
                 return True  # Return True if password matched
+
         print("Username or Password Error")
         return False  # Username does not match
 
     def add_notes(self, note):  # Func to add notes to database
         self.cur.execute(  # Checks if note already exists
-            "SELECT EXISTS(SELECT 1 FROM Notes if Content=?)", (note["content"],)
+            "SELECT EXISTS(SELECT 1 FROM Notes WHERE Content=? AND user_id=?)",
+            (note["content"], self.id),
         )
-        if self.cur.fetchone()[0]:
+        if not self.cur.fetchone()[0]:
             self.cur.execute(  # Adds user id, Content and Done status to the table
-                "INSERT INTO Notes(user_id, Content, Done) WHERE VALUES (?,?,?)",
+                "INSERT INTO Notes(user_id, Content, Done) VALUES(?,?,?)",
                 (
                     self.id,
                     note["content"],
@@ -138,7 +143,10 @@ class Database:  # Creates Database To store values
         notes = self.cur.fetchall()
         for i, note in enumerate(notes, start=1):
             if i == data:
-                self.cur.execute("DELETE FROM Notes WHERE Content=?", (note[0],))
+                self.cur.execute(
+                    "DELETE FROM Notes WHERE Content= ? AND user_id=?",
+                    (note[0], self.id),
+                )
                 print("Note Deleted successfully")
         self.con.commit()
         return
@@ -152,7 +160,7 @@ class Database:  # Creates Database To store values
                     print("Note Already Marked Done")
                     return
                 self.cur.execute(
-                    "UPDATE Done=? FROM Notes WHERE Content=?",
+                    "UPDATE Notes SET Done=? WHERE Content=?",
                     (
                         done,
                         note[0],
@@ -171,7 +179,7 @@ class Database:  # Creates Database To store values
                     print("Note Already Unmarked Done")
                     return
                 self.cur.execute(
-                    "UPDATE Done=? FROM Notes WHERE Content=?",
+                    "UPDATE Notes SET Done=? WHERE Content=?",
                     (
                         done,
                         note[0],
@@ -197,7 +205,7 @@ class User:
                 print()
                 print("Invalid Input. Enter a Number")
                 print()
-            if ans < 0 and ans > high:
+            if ans < 0 or ans > high:
                 print("Enter a valid option")
                 print()
             elif ans == 0:
@@ -232,7 +240,7 @@ class User:
     def existing_user(self):  # Func for existing user login
         print("--Existing User-- \n")
         username = input("Enter your username: ").strip().upper()
-        password = ("Enter your password: ").strip()
+        password = input("Enter your password: ").strip()
         name = {
             "username": username,
             "password": password,
@@ -248,10 +256,10 @@ class User:
 
     def delete_user(self):
         print("--Delete User-- \n")
-        if self.db.view_users() < 0:
+        count = self.db.view_users()
+        if count < 0:
             print("No user Available")
             return
-        count = self.db.view_users()
         ans = self.user_input(count)
         if ans == 0:
             return
@@ -268,6 +276,10 @@ class User:
         exists = self.db.add_notes(note)
         print()
         return exists
+
+    def view_notes(self):
+        print("--View Notes-- \n")
+        self.db.view_notes()
 
     def delete_notes(self):  # Func to delete notes
         print("--Delete Note-- \n")
@@ -306,6 +318,19 @@ class NotesApp:  # Main Notes App class
         self.Exit = False
         self.user = User()
 
+    def user_input(self, low, high):
+        while True:
+            try:
+                ans = int(input(f"Enter Number From 1 to {high}"))
+            except ValueError:
+                print("Enter a number")
+            if ans < low or ans > high:
+                print("Select a valid option")
+                continue
+            else:
+                break
+        return ans
+
     def user_menu(self):  # Func to display user menu
         print()
         print("*" * 30)
@@ -315,36 +340,26 @@ class NotesApp:  # Main Notes App class
         while True:  # Loop until user exits
             print("1. New User")
             print("2. Existing User")
-            print("3. Exit")
+            print("3. Delete User")
+            print("4. Exit")
             print()
-            try:
-                choice = int(input("Select an option: "))
-                print()
-            except ValueError:
-                print("Invalid input. Please enter a number.")
-                continue
-            if choice < 1 or choice > 3:
-                print("Please select a valid option.")
-                continue
-            elif choice == 1:
-                self.user.new_user()
-                if self.user.available:
-                    break
-                else:
-                    continue
-            elif choice == 2:
-                self.user.existing_user()
-                if not self.user.available:
-                    continue
-                else:
-                    break
-            elif choice == 3:
-                with open(self.user.file, "w") as f:
-                    json.dump(self.user.users, f, indent=2)
-                print("Exiting Notes App")
+            ans = self.user_input(1, 4)
+            if ans == 4:
                 self.Exit = True
                 break
-        return
+            elif ans == 1:
+                self.user.new_user()
+                if self.user.available:
+                    continue
+                break
+            elif ans == 2:
+                exist = self.user.existing_user()
+                if exist:
+                    break
+                continue
+            elif ans == 3:
+                self.user.delete_user()
+                continue
 
     def notes_menu(self):  # Func to display notes menu
         while True:  # Loop until user exits
@@ -355,39 +370,28 @@ class NotesApp:  # Main Notes App class
             print("5. Mark Note as Undone")
             print("6. Logout")
             print()
-            try:
-                choice = int(input("Select an option: "))
-                print()
-            except ValueError:
-                print("Invalid input. Please enter a number.")
-                continue
-            if choice < 1 or choice > 6:
-                print("Please select a valid option.")
-                continue
-            elif choice == 1:
+            ans = self.user_input(1, 6)
+            if ans == 6:
+                print("Logging out...")
+                return
+            elif ans == 1:
                 self.user.add_notes()
-                if not self.user.available:
-                    continue
-            elif choice == 2:
-                print("--View Notes-- \n")
+                continue
+            elif ans == 2:
                 self.user.view_notes()
                 print()
-                inp = getpass("Press Enter to continue...")
+                inp = input("Press Enter to continue...")
                 print()
                 continue
-            elif choice == 3:
+            elif ans == 3:
                 self.user.delete_notes()
                 continue
-            elif choice == 4:
+            elif ans == 4:
                 self.user.mark_done()
                 continue
-            elif choice == 5:
+            elif ans == 5:
                 self.user.mark_undone()
                 continue
-            elif choice == 6:
-                print("Logging out...")
-                print()
-                return
 
 
 class RunApp:
@@ -400,5 +404,5 @@ class RunApp:
             app.notes_menu()
 
 
-# run=RunApp()
-# run.run()
+run = RunApp()
+run.run()
