@@ -12,6 +12,7 @@ class Database:  # Creates Database To store values
         self.database = database
         self.con = sqlite3.connect(self.database)  # SQL Connect
         self.cur = self.con.cursor()  # Cursor
+        self.id = 0
         self.cur.execute(
             """CREATE TABLE IF NOT EXISTS login_info(id INTEGER PRIMARY KEY, username, password)"""
         )  # Creates Table for user info If it does not exist
@@ -33,78 +34,151 @@ class Database:  # Creates Database To store values
                 (data["username"], data["password"]),
             )
             self.con.commit()
+        self.cur.execute(
+            "SELECT id FROM login_info WHERE username=?", (data["username"],)
+        )
+        self.id = self.cur.fetchone()[0]
         return False
 
-    def delete_user(self, data):  # Func to delete User from Table login_info from database
-        self.cur.execute(
-            "DELETE FROM login_info where username=?",  # Deletes User
-            data["username"],
-        )
+    def view_users(self):  # View users
+        self.cur.execute("SELECT COUNT(*) FROM login_info")
+        count = self.cur.fetchone()[0]
+        if count < 1:
+            print("No user exists")
+            return
+        self.cur.execute("SELECT username FROM login_info")
+        users = self.cur.fetchall()
+        for i, user in enumerate(users):
+            print(f"{i}. {user}")
+        return count
+
+    def delete_user(
+        self, num
+    ):  # Func to delete User from Table login_info from database
+        self.cur.execute("SELECT username FROM login_info")
+        users = self.cur.fetchall()
+        for i, user in enumerate(users, start=1):  # Lopps over the usernames
+            if num == i:
+                self.cur.execute(
+                    "DELETE FROM Notes WHERE user_id=(SELECT id FROM login_info WHERE username=?)",
+                    (user[0],),
+                )  # deletes notes before username
+                self.cur.execute(
+                    "DELETE FROM login_info WHERE username=?", (user[0],)
+                )  # Deletes Userdata
+                print(f"User {user[0]} Deleted")
+                break
         self.con.commit()
         return
 
-    def user_exists(self, data):
+    def user_exists(self, data):  # Checks Username/password
         self.cur.execute(  # Checks if username already exists
             "SELECT EXISTS(SELECT 1 FROM login_info WHERE username=? and)",
             (data["username"],),
         )
-        if self.cur.fetchone[0]:
-            self.cur.execute("SELECT password FROM login_info WHERE username = ",(data['username'],))
-            password =self.cur.fetchone()
-            check=bcrypt.checkpw(
-                password.encrypt('utf-8',data['password'].encrypt('utf-8'))
+        if self.cur.fetchone[0]:  # if user exists check password
+            self.cur.execute(
+                "SELECT password FROM login_info WHERE username = ", (data["username"],)
             )
-            return check
-        return False
+            password = self.cur.fetchone()
+            check = bcrypt.checkpw(
+                password.encrypt("utf-8"), data["password"].encrypt("utf-8")
+            )
+            if check:
+                self.cur.execute(
+                    "SELECT id FROM login_info WHERE username=?", (data["username"],)
+                )
+                self.id = self.cur.fetchone()[0]
+                print("Welcome ", data["username"])
+                return True  # Return True if password matched
+        print("Username or Password Error")
+        return False  # Username does not match
 
-    def add_notes(self, data, note):  # Func to add notes to database
-        self.cur.execute(  # Checks the id of User to which note is to be added
-            "FROM login info SELECT id WHERE username=?", (data["username"],)
-        )
-        id = self.cur.fetchone()[0]  # Id of the user
+    def add_notes(self, note):  # Func to add notes to database
         self.cur.execute(  # Checks if note already exists
-            "SELECT EXISTS(SELECT 1 FROM Notes if Content=?)", (note["content"])
+            "SELECT EXISTS(SELECT 1 FROM Notes if Content=?)", (note["content"],)
         )
         if self.cur.fetchone()[0]:
             self.cur.execute(  # Adds user id, Content and Done status to the table
                 "INSERT INTO Notes(user_id, Content, Done) WHERE VALUES (?,?,?)",
                 (
-                    id,
+                    self.id,
                     note["content"],
                     note["done"],
                 ),
             )
             self.con.commit()  # Commits
+            print("Note Added Sucessfully")
+            return False
         else:
             print("Note already exists")  # Note already Exists
-        return
+        return True
+
+    def view_notes(self):
+        self.cur.execute("SELECT COUNT(*) FROM Notes WHERE user_id=?", (self.id,))
+        count = self.cur.fetchone()[0]  # No of rows in Notes database
+        if count > 0:
+            self.cur.execute(
+                "SELECT Content, Done FROM Notes WHERE user_id=?", (self.id,)
+            )
+            notes = self.cur.fetchall()
+            for i, note in enumerate(notes, start=1):
+                print(
+                    f'{i}. {note[0]}      {"✅" if note[1] else ""}'
+                )  # Displays Done or not done
+        else:
+            print("No notes Available")
+        print()
+        return count
 
     def delete_note(
         self, data
     ):  # Func to delete Content From Table Notes from database
-        self.cur.execute(
-            "DELETE FROM Notes where Content=?",  # Deletes Notes
-            data["content"],
-        )
+        self.cur.execute("SELECT Content FROM Notes WHERE user_id=?", (self.id,))
+        notes = self.cur.fetchall()
+        for i, note in enumerate(notes, start=1):
+            if i == data:
+                self.cur.execute("DELETE FROM Notes WHERE Content=?", (note[0],))
+                print("Note Deleted successfully")
         self.con.commit()
         return
 
-    def update_done(self, data, done):  # Func to update done status from Table Notes
-        self.cur.execute(
-            "SELECT EXISTS(SELECT 1 FROM Notes WHERE Done=?)",
-            done,
-        )
-        if self.cur.fetchone()[0]:  # Checks if the Done status is same
-            print(" Thhe note is already Marked ", "Done" if done else "Not Done")
-        else:
-            self.cur.execute(  # Updated Done Status
-                "UPDATE Notes SET Done=? WHERE Content=?",
-                (
-                    done,
-                    data["content"],
-                ),
-            )
-            self.con.commit()
+    def done(self, data, done=True):  # Func to update done status from Table Notes
+        self.cur.execute("SELECT Content, Done FROM Notes WHERE user_id=?", (self.id,))
+        notes = self.cur.fetchall()
+        for i, note in enumerate(notes, start=1):
+            if data == i:
+                if note[1]:
+                    print("Note Already Marked Done")
+                    return
+                self.cur.execute(
+                    "UPDATE Done=? FROM Notes WHERE Content=?",
+                    (
+                        done,
+                        note[0],
+                    ),
+                )
+                print("Marked Done sucessfully")
+        self.con.commit()
+        return
+
+    def undone(self, data, done=False):  # Func to update done status from Table Notes
+        self.cur.execute("SELECT Content, Done FROM Notes WHERE user_id=?", (self.id,))
+        notes = self.cur.fetchall()
+        for i, note in enumerate(notes, start=1):
+            if data == i:
+                if not note[1]:
+                    print("Note Already Unmarked Done")
+                    return
+                self.cur.execute(
+                    "UPDATE Done=? FROM Notes WHERE Content=?",
+                    (
+                        done,
+                        note[0],
+                    ),
+                )
+                print("Note Unmarked Done sucessfully")
+        self.con.commit()
         return
 
 
@@ -112,48 +186,52 @@ class User:
     def __init__(self):  # Initializes variables
         self.db = Database()  # Connects to Database Class
         self.available = False
-        self.notes = {
-            "content": "",
-            "done": False,
-        }  # Dict to store notes content and done status
-        self.name = {  # Dict stores username password and notes
-            "username": "",
-            "password": "",
-        }
+        self.id = 0
 
     def user_input(self, high):
         while True:
             try:
                 ans = int(input("Select an Option \n press 0 to Exit: "))
+                print()
             except ValueError:
                 print()
-                print("Enter a Number")
+                print("Invalid Input. Enter a Number")
                 print()
             if ans < 0 and ans > high:
                 print("Enter a valid option")
                 print()
+            elif ans == 0:
+                print("Exit.")
+                print()
+                break
             else:
                 break
         return ans
 
     def new_user(self):  # Func to add new user
         print("--New User-- \n")
-        username = input("Enter your username: ").strip()
-        password = input("Create your password: ").strip()      #User enters password
-        password_bytes = password.encode('utf-8')               #Changes into bytes
-        hashed_password = bcrypt.hashpw(password_bytes, bcrypt.gensalt())       #Hash password using gensalt
-        decoded_password = hashed_password.decode('utf-8')      #Decoded from bytes to string to save in database
+        username = input("Enter your username: ").strip().upper()
+        password = input("Create your password: ").strip()  # User enters password
+        password_bytes = password.encode("utf-8")  # Changes into bytes
+        hashed_password = bcrypt.hashpw(
+            password_bytes, bcrypt.gensalt()
+        )  # Hash password using gensalt
+        decoded_password = hashed_password.decode(
+            "utf-8"
+        )  # Decoded from bytes to string to save in database
         print()
         name = {
             "username": username,
             "password": decoded_password,
         }
-        self.available = self.db.add_user(self.name)  # Returns True if user exists False if Not
+        self.available = self.db.add_user(
+            name
+        )  # Returns True if user exists False if Not
         return self.available
 
     def existing_user(self):  # Func for existing user login
         print("--Existing User-- \n")
-        username = input("Enter your username: ").strip()
+        username = input("Enter your username: ").strip().upper()
         password = ("Enter your password: ").strip()
         name = {
             "username": username,
@@ -165,144 +243,62 @@ class User:
         return exists
 
     def view_users(self):
-        if len(self.users) == 0:
-            print("No users available")
-            return 0
-        for i, user in enumerate(self.users):
-            print(f"{i+1}. {user['username']}")
+        self.db.view_users()
         return
 
     def delete_user(self):
         print("--Delete User-- \n")
-        if self.view_users() == 0:
-            self.view_users()
+        if self.db.view_users() < 0:
+            print("No user Available")
             return
-        while True:  # Loop until valid input
-            try:
-                n = int(input("Select user to delete (0 to cancel): "))
-                print()
-            except ValueError:
-                print("Invalid input. Please enter a number.")
-                continue
-            if n < 0 or n > len(self.users):
-                print("Please select a valid number from the list.")
-                continue
-            elif n == 0:
-                print("--Delete cancelled-- \n")
-                return
-            elif n in range(1, len(self.users) + 1):
-                for i, user in enumerate(self.users):
-                    if n - 1 == i:
-                        self.users.pop(i)
-                        with open(self.file, "w") as f:
-                            json.dump(self.users, f, indent=2)
-                            return
+        count = self.db.view_users()
+        ans = self.user_input(count)
+        if ans == 0:
+            return
+        self.db.delete_user(ans)
+        return
 
     def add_notes(self):  # Func to add notes for user
         print("--Add Note-- \n")
         content = input("Enter note: \n").strip()
-        print()
-        self.notes = {
+        note = {
             "content": content,
             "done": False,
         }  # Sets note content and done status
-        for note in self.name["notes"]:  # Checks if note already exists
-            if content == note["content"]:
-                print("Note already exists")
-                self.available = False
-                return
-        self.available = True
-        self.name["notes"].append(self.notes)  # Appends note to user's notes list
-        print("Note added successfully")
+        exists = self.db.add_notes(note)
         print()
-        return
+        return exists
 
     def delete_notes(self):  # Func to delete notes
         print("--Delete Note-- \n")
-        cancel = False
-        self.view_notes()
+        high = self.db.view_notes()
+        if high < 1:  # Returns if no notes available
+            return
         print()
-        while True:  # Loop until valid input
-            try:  # Input validation for note selection
-                n = int(input("select note to delete (0 to cancel):"))
-                print()
-            except ValueError:
-                print("Invalid input. Please enter a number.")
-                continue
-            if n < 0 or n > len(self.name["notes"]):
-                print("Please select a valid number from the list.")
-                continue
-            elif n == 0:  # Cancels delete operation
-                cancel = True
-                print("Delete cancelled")
-                print()
-                return
-            else:
-                break
-        for i, note in enumerate(self.name["notes"]):  # Deletes selected note
-            if n - 1 == i:
-                self.name["notes"].pop(i)
-                print("Note deleted successfully")
-                print()
+        ans = self.user_input(high)
+        if ans == 0:
+            return
+        self.db.delete_note(ans)  # deletes the selected note
         return
-
-    def view_notes(self):  # Func to view notes
-        for i, note in enumerate(self.name["notes"]):  # Displays notes with done status
-            print(f"{i + 1}. {note['content']}    {'✅' if note['done'] else ''}")
 
     def mark_done(self):  # Func to mark notes as done
         print("--Mark Note as Done-- \n")
-        self.view_notes()
+        count = self.db.view_notes()
+        if count < 1:
+            return
         print()
-        while True:  # Loop until valid input
-            try:  # Input validation for note selection
-                n = int(input("select note to mark as done:"))
-            except ValueError:
-                print("Invalid input. Please enter a number.")
-                continue
-            if n < 1 or n > len(self.name["notes"]):
-                print("Please select a valid number from the list.")
-                continue
-            else:
-                break
-        print()
-        for i, note in enumerate(self.name["notes"]):  # Marks selected note as done`
-            if n - 1 == i:
-                if note["done"] == True:
-                    print("Note is already marked as Done")
-                    print()
-                else:
-                    note["done"] = True
-                    print("Note marked as done")
-                    print()
-        return self.name["notes"]
+        ans = self.user_input(count)
+        self.db.done(ans)
+        return
 
     def mark_undone(self):  # Func to mark notes as not done
         print("--Unmark Note as Done-- \n")
-        self.view_notes()
-        print()
-        while True:  # Loop until valid input
-            try:  # Input validation for note selection
-                n = int(input("select note to mark as udone:"))
-                print()
-            except ValueError:
-                print("Invalid input. Please enter a number.")
-                continue
-            if n < 1 or n > len(self.name["notes"]):
-                print("Please select a valid number from the list.")
-                continue
-            else:
-                break
-        for i, note in enumerate(self.name["notes"]):  # Marks selected note as not done
-            if n - 1 == i:
-                if note["done"] == False:
-                    print("Note is already marked as undone")
-                    print()
-                else:
-                    note["done"] = False
-                    print("Note marked as undone")
-                    print()
-        return self.name["notes"]
+        count = self.db.view_notes()
+        if count < 1:
+            return
+        ans = self.user_input(count)
+        self.db.undone(ans)
+        return
 
 
 class NotesApp:  # Main Notes App class
