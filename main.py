@@ -13,7 +13,7 @@ class Database:  # Creates Database To store values
         self.cur = self.con.cursor()  # Cursor
         self.id = 0
         self.cur.execute(
-            """CREATE TABLE IF NOT EXISTS login_info(id INTEGER PRIMARY KEY, username, password)"""
+            """CREATE TABLE IF NOT EXISTS login_info(id INTEGER PRIMARY KEY, username TEXT COLLATE NOCASE, password)"""
         )  # Creates Table for user info If it does not exist
         self.cur.execute(
             "CREATE TABLE IF NOT EXISTS Notes(id INTEGER PRIMARY KEY, user_id, Content , Done)"
@@ -75,7 +75,7 @@ class Database:  # Creates Database To store values
 
     def user_exists(self, data):  # Checks Username/password
         self.cur.execute(  # Checks if username already exists
-            "SELECT EXISTS(SELECT 1 FROM login_info WHERE username= ? )",
+            "SELECT EXISTS(SELECT 1 FROM login_info WHERE username=? )",
             (data["username"],),
         )
         if self.cur.fetchone():  # if user exists check password
@@ -84,15 +84,14 @@ class Database:  # Creates Database To store values
                 (data["username"],),
             )
             password = self.cur.fetchone()[0]
-            check = bcrypt.checkpw(
-                data["password"].encode("utf-8"), password.encode("utf-8")
-            )
+            check = bcrypt.checkpw(data["password"].encode("utf-8"), password)
             if check:
                 self.cur.execute(
-                    "SELECT id FROM login_info WHERE username=?", (data["username"],)
+                    "SELECT username, id FROM login_info WHERE username=?",
+                    (data["username"],),
                 )
-                self.id = self.cur.fetchone()[0]
-                print("Welcome ", data["username"])
+                username, self.id = self.cur.fetchone()
+                print("Welcome ", username)
                 return True  # Return True if password matched
 
         print("Username or Password Error")
@@ -217,20 +216,46 @@ class User:
         return ans
 
     def new_user(self):  # Func to add new user
+        print()
         print("--New User-- \n")
-        username = input("Enter your username: ").strip().upper()
-        password = input("Create your password: ").strip()  # User enters password
+        while True:
+            username = input("Enter your username: ").strip()
+            if len(username) == 0:
+                print("Username cannot be empty")
+                continue
+            break
+        while True:  # User authentication for strong password
+            print()
+            password = input(
+                "Create a strong password: "
+            ).strip()  # User enters password
+            contains_digit = any(
+                char.isdigit for char in password
+            )  # checks if the password contains number
+            if len(password) < 8:  # checks the length of the password
+                print("Password must be at least 8 characters")
+                continue
+            elif not contains_digit:
+                print("Passwrod must have at least one digit")
+                continue
+            elif password.isalnum():
+                print("Password must contain at least one symbol")
+                continue
+            elif not any(char.isupper() for char in password):
+                print("password must have at least one Uppercase character")
+                continue
+            elif " " in password:
+                print("password must not contain any spaces")
+                continue
+            break
         password_bytes = password.encode("utf-8")  # Changes into bytes
         hashed_password = bcrypt.hashpw(
             password_bytes, bcrypt.gensalt()
         )  # Hash password using gensalt
-        decoded_password = hashed_password.decode(
-            "utf-8"
-        )  # Decoded from bytes to string to save in database
         print()
         name = {
             "username": username,
-            "password": decoded_password,
+            "password": hashed_password,
         }
         self.available = self.db.add_user(
             name
@@ -239,7 +264,7 @@ class User:
 
     def existing_user(self):  # Func for existing user login
         print("--Existing User-- \n")
-        username = input("Enter your username: ").strip().upper()
+        username = input("Enter your username: ").strip()
         password = input("Enter your password: ").strip()
         name = {
             "username": username,
@@ -404,5 +429,6 @@ class RunApp:
             app.notes_menu()
 
 
-run = RunApp()
-run.run()
+if __name__ == "__main__":
+    run = RunApp()
+    run.run()
