@@ -3,8 +3,8 @@ Notes App where User can login and store their notes and mark them as done or no
 """
 
 import sqlite3
+import getpass
 import bcrypt
-
 
 class Database:  # Creates Database To store values
     def __init__(self, database="data.db"):
@@ -195,10 +195,14 @@ class User:
         self.available = False
         self.id = 0
 
-    def user_input(self, high):
+    def user_input(self, high):     
         while True:
+            user_int= input("Select an Option \nPress 0 to exit : ").strip()
+            if user_int == "":
+                print('Input cannot be empty')
+                continue
             try:
-                ans = int(input("Select an Option \n press 0 to Exit: "))
+                ans = int(user_int)
                 print()
             except ValueError:
                 print()
@@ -220,38 +224,38 @@ class User:
         print("--New User-- \n")
         while True:
             username = input("Enter your username: ").strip()
-            if len(username) == 0:
+            if len(username) == 0:   #if username is empty
                 print("Username cannot be empty")
                 continue
             break
-        while True:  # User authentication for strong password
+        while True:                          # User authentication for strong password
             print()
-            password = input(
+            password = getpass.getpass(
                 "Create a strong password: "
-            ).strip()  # User enters password
+            ).strip()   # User input
             contains_digit = any(
-                char.isdigit for char in password
-            )  # checks if the password contains number
-            if len(password) < 8:  # checks the length of the password
+                char.isdigit for char in password  # checks if password contains number
+            )                  
+            if len(password) < 8: # checks length of password
                 print("Password must be at least 8 characters")
                 continue
-            elif not contains_digit:
+            elif not contains_digit:            
                 print("Passwrod must have at least one digit")
                 continue
-            elif password.isalnum():
+            elif password.isalnum():      #Checks symbols
                 print("Password must contain at least one symbol")
                 continue
-            elif not any(char.isupper() for char in password):
+            elif not any(char.isupper() for char in password):  #checks for uppercase chars
                 print("password must have at least one Uppercase character")
                 continue
-            elif " " in password:
+            elif " " in password:#checks for spaces
                 print("password must not contain any spaces")
                 continue
             break
         password_bytes = password.encode("utf-8")  # Changes into bytes
-        hashed_password = bcrypt.hashpw(
-            password_bytes, bcrypt.gensalt()
-        )  # Hash password using gensalt
+        hashed_password = bcrypt.hashpw(                
+            password_bytes, bcrypt.gensalt()       # Hash password using gensalt
+        )                                                   
         print()
         name = {
             "username": username,
@@ -265,7 +269,7 @@ class User:
     def existing_user(self):  # Func for existing user login
         print("--Existing User-- \n")
         username = input("Enter your username: ").strip()
-        password = input("Enter your password: ").strip()
+        password = getpass.getpass("Enter your password: ").strip()
         name = {
             "username": username,
             "password": password,
@@ -343,17 +347,20 @@ class NotesApp:  # Main Notes App class
         self.Exit = False
         self.user = User()
 
-    def user_input(self, low, high):
+    def user_input(self,high):
         while True:
+            user_int= input("Select an Option \nPress 0 to Exit: ").strip()
+            if user_int == "":
+                print('Input cannot be empty')
+                continue
             try:
-                ans = int(input(f"Enter Number From 1 to {high}"))
+                ans = int(user_int)
             except ValueError:
                 print("Enter a number")
-            if ans < low or ans > high:
+            if ans > high:
                 print("Select a valid option")
                 continue
-            else:
-                break
+            break
         return ans
 
     def user_menu(self):  # Func to display user menu
@@ -366,10 +373,9 @@ class NotesApp:  # Main Notes App class
             print("1. New User")
             print("2. Existing User")
             print("3. Delete User")
-            print("4. Exit")
             print()
-            ans = self.user_input(1, 4)
-            if ans == 4:
+            ans = self.user_input(3)
+            if ans == 0:
                 self.Exit = True
                 break
             elif ans == 1:
@@ -393,10 +399,9 @@ class NotesApp:  # Main Notes App class
             print("3. Delete Note")
             print("4. Mark Note as Done")
             print("5. Mark Note as Undone")
-            print("6. Logout")
             print()
-            ans = self.user_input(1, 6)
-            if ans == 6:
+            ans = self.user_input(5)
+            if ans == 0: 
                 print("Logging out...")
                 return
             elif ans == 1:
